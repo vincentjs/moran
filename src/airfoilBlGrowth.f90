@@ -193,8 +193,50 @@ contains
     end if
     
   end subroutine thwats
-  
-  
+
+  elemental real function H10FH(H)
+    !! Head's Correlation Formula for H1(H)
+
+    if (H > 1.6) then
+       H10FH = 3.3 + 1.5501 * (H - 0.6778)**-3.064
+    else
+       H10FH = 3.3 + 0.8234 * (H - 1.1)**-1.287
+    end if
+
+  end function H10FH
+
+  elemental real function H0FH1(H1)
+    !! Inverse of H1(H)
+
+    if (H1 < 3.3) then
+       H0FH1 = 3.0
+    else if (H1 >= 3.3 .or. H1 < 5.3) then
+       H0FH1 = 0.6778 + 1.1536 * (H1 - 3.3)**-0.326
+    else
+       H0FH1 = 1.1 + 0.86 * (H1 - 3.3)**-0.777
+    end if
+
+  end function H0FH1
+
+  pure real function cfturb(rtheta, H)
+    !! Ludwieg-Tillman Skin Friction Formula
+
+    cfturb = 0.246 * (10.0**(-0.678*H)) * (rtheta**-0.268)
+
+  end function cfturb
+
+  subroutine derivs(i)
+    !! Set derivatives of vector Y
+    H1 = yt(2)
+    if (H1 > 3.0) then
+       H = H0FH1(H1)
+       rtheta = re * ve(i) * yt(1)
+       yp(1) = -(H + 2.0) * yt(1) * vgrad(i) / ve(i) + 0.5 * cfturb(rtheta,H)
+       yp(2) = -H1 * (vgrad(i) / ve(i) + yp(1)/yt(1)) + 0.0306 * ((H1-3)**-0.6169) / yt(1)
+    end if
+
+  end subroutine derivs
+      
   elemental real function x(i)
     !! X-coordinates of the ellipse,
     !! $$ x_i = -\cos\left(\frac{(i-1)\pi}{nx-1}\tau\right) $$
